@@ -1,0 +1,70 @@
+#!/usr/local/bin/cbsd
+MYARG="jname"
+MYOPTARG="description ip4_addr mode note servername subnet debug hostname"
+MYDESC="Operate with PHPIPAM API"
+CBSDMODULE="sys"
+ADDHELP="\
+
+${H3_COLOR}Description${N0_COLOR}:
+
+CBSD integration with monit. This is mostly an example implementation where to start,
+but can be used as a basis for configurations that are suitable for you.
+
+In fact, this script replaces the variables in the monitrc template in
+~cbsd/jails-system/<jail>/monit/monitrc.tpl (you have to create it) into
+~cbsd/jails-system/<jail>/monit/monitrc and restarts the 'monit' service.
+
+You must follow the normal syntax of the 'monit' rules in monitrc.tpl and
+add into /usr/local/etc/monitrc the following lines at the end of the file:
+
+include ${workdir}/jails-system/*/monit/monitrc
+
+Also make sure you have:
+
+/usr/local/cbsd/modules/monit.d/share/master_prestop.d/monit.sh
+/usr/local/cbsd/modules/monit.d/share/master_poststart.d/monit.sh
+/usr/local/cbsd/modules/monit.d/share/remove.d/monit.sh
+
+in the corresponding directories of the container in ~cbsd/jails-system/<jail>/.
+To do this automatically, use custom profiles and/or skel dir.
+
+${H3_COLOR}Options${N0_COLOR}:
+
+ ${N2_COLOR}jname=${N0_COLOR} - apply skel to jname environment.
+
+${H3_COLOR}Examples${N0_COLOR}:
+
+ # cbsd module jname=nginx
+
+${H3_COLOR}See also${N0_COLOR}:
+
+ Template file sample for TCP/80 check:
+   /usr/local/cbsd/modules/monit.d/share/monitrc.tpl
+
+ # cbsd jcreate jname=lb1 runasap=1 pkglist=nginx sysrc="nginx_enable=YES"
+
+"
+
+EXTHELP=
+
+. ${subr}
+
+. ${cbsdinit}
+. ${system}
+. ${strings}
+
+. ${jrcconf}
+[ $? -eq 1 ] && log_err 1 "${N1_COLOR}No such jail: ${N2_COLOR}${jname}${N0_COLOR}"
+
+[ ! -r ${jailsysdir}/${jname}/monit/monitrc.tpl ] && exit 0
+
+[ -z "${ipv4_first}" ] && ipv4_first=$( jget jname=${jname} mode=quiet ip4_addr | ${AWK_CMD} '{printf $1}' )
+[ -z "${ipv4_first}" ] && err 1 "${N1_COLOR}${CBSD_APP}: empty ipv4_first${N0_COLOR}"
+
+${SED_CMD} -Ees:%%JNAME%%:"${jname}":g \
+	-es:%%IPV4_FIRST%%:"${ipv4_first}":g \
+	${jailsysdir}/${jname}/monit/monitrc.tpl > ${jailsysdir}/${jname}/monit/monitrc
+
+/usr/sbin/service monit onereload
+
+exit 0
