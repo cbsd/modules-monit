@@ -3,7 +3,7 @@ MYARG="jname"
 MYOPTARG="description ip4_addr mode note servername subnet debug hostname"
 MYDESC="Operate with PHPIPAM API"
 CBSDMODULE="sys"
-ADDHELP="\
+ADDHELP="
 
 ${H3_COLOR}Description${N0_COLOR}:
 
@@ -47,13 +47,11 @@ ${H3_COLOR}See also${N0_COLOR}:
 
 EXTHELP=
 
-. ${subr}
-
-. ${cbsdinit}
+. ${subrdir}/nc.subr
+. "${subrdir}"/cbsdinit.subr
 . ${system}
-. ${strings}
-
-. ${jrcconf}
+. "${subrdir}"/strings.subr
+. "${subrdir}"/rcconf.subr
 [ $? -eq 1 ] && log_err 1 "${N1_COLOR}No such jail: ${N2_COLOR}${jname}${N0_COLOR}"
 
 [ ! -r ${jailsysdir}/${jname}/monit/monitrc.tpl ] && exit 0
